@@ -31,7 +31,7 @@ graphWith3Vertices =
 ## Documentation
 
 For full API documentation and more examples, please visit the
-[Elm package documentation](https://package.elm-lang.org/packages/guida-lang/glsl/1.0.0).
+[Elm package documentation](https://package.elm-lang.org/packages/guida-lang/graph/1.0.0).
 
 ## Contributing
 
