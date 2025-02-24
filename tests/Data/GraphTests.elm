@@ -135,4 +135,10 @@ suite =
                         [ Tree.tree 0 [ Tree.tree 1 [ Tree.tree 2 [] ] ]
                         , Tree.tree 3 []
                         ]
+        , Test.test "dfs (RangeError: Maximum call stack size exceeded)" <|
+            \_ ->
+                List.repeat 2000 ()
+                    |> List.indexedMap (\i _ -> i)
+                    |> G.dfs (G.buildG ( 0, 0 ) [])
+                    |> always Expect.pass
         ]

@@ -489,32 +489,38 @@ reasons.
 dfs : Graph -> List Vertex -> List (Tree Vertex)
 dfs g vs0 =
     let
-        go : List Vertex -> SetM s (List (Tree Vertex))
+        go : List Vertex -> SetM (List (Tree Vertex))
         go vrtcs =
+            loop goHelp ( vrtcs, identity )
+
+        goHelp : ( List Vertex, SetM (List (Tree Vertex)) -> SetM (List (Tree Vertex)) ) -> SetM (Step ( List Vertex, SetM (List (Tree Vertex)) -> SetM (List (Tree Vertex)) ) (List (Tree Vertex)))
+        goHelp ( vrtcs, cont ) =
             case vrtcs of
                 [] ->
-                    pure []
+                    fmap Done <| cont <| pure []
 
                 v :: vs ->
                     contains v
                         |> bind
                             (\visited ->
                                 if visited then
-                                    go vs
+                                    pure (Loop ( vs, cont ))
 
                                 else
                                     include v
                                         |> bind
                                             (\_ ->
-                                                go (Maybe.withDefault [] (Internal.find v g))
-                                                    |> bind
-                                                        (\subForest ->
-                                                            go vs
-                                                                |> bind
-                                                                    (\bs ->
-                                                                        pure (Tree.tree v subForest :: bs)
-                                                                    )
+                                                pure
+                                                    (Loop
+                                                        ( Maybe.withDefault [] (Internal.find v g)
+                                                        , bind
+                                                            (\subForest ->
+                                                                go vs
+                                                                    |> fmap (\bs -> Tree.tree v subForest :: bs)
+                                                            )
+                                                            >> cont
                                                         )
+                                                    )
                                             )
                             )
     in
@@ -531,42 +537,66 @@ type alias IntSet =
     Set Int
 
 
-type SetM s a
-    = SetM (IntSet -> ( a, IntSet ))
+type alias SetM a =
+    IntSet -> ( a, IntSet )
 
 
-bind : (a -> SetM s b) -> SetM s a -> SetM s b
-bind f (SetM v) =
-    SetM
-        (\s ->
-            let
-                ( x, s_ ) =
-                    v s
-            in
-            case f x of
-                SetM v_ ->
-                    v_ s_
-        )
+fmap : (a -> b) -> SetM a -> SetM b
+fmap fn ma s0 =
+    let
+        ( a, s1 ) =
+            ma s0
+    in
+    ( fn a, s1 )
 
 
-pure : a -> SetM s a
+bind : (a -> SetM b) -> SetM a -> SetM b
+bind f ma =
+    \s0 ->
+        let
+            ( x, s1 ) =
+                ma s0
+        in
+        f x s1
+
+
+pure : a -> SetM a
 pure x =
-    SetM (\s -> ( x, s ))
+    \s -> ( x, s )
 
 
-run : Bounds -> SetM s a -> a
-run _ (SetM act) =
+run : Bounds -> SetM a -> a
+run _ act =
     Tuple.first (act Set.empty)
 
 
-contains : Vertex -> SetM s Bool
+contains : Vertex -> SetM Bool
 contains v =
-    SetM (\m -> ( Set.member v m, m ))
+    \m -> ( Set.member v m, m )
 
 
-include : Vertex -> SetM s ()
+include : Vertex -> SetM ()
 include v =
-    SetM (\m -> ( (), Set.insert v m ))
+    \m -> ( (), Set.insert v m )
+
+
+
+-- LOOP
+
+
+type Step state a
+    = Loop state
+    | Done a
+
+
+loop : (state -> SetM (Step state a)) -> state -> SetM a
+loop callback loopState state =
+    case callback loopState state of
+        ( Loop newLoopState, newState ) ->
+            loop callback newLoopState newState
+
+        ( Done a, newState ) ->
+            ( a, newState )
 
 
 
