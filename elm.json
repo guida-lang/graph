@@ -3,7 +3,7 @@
     "name": "guida-lang/graph",
     "summary": "An Elm graph type implementation, inspired by Haskell's Data.Graph",
     "license": "BSD-3-Clause",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "exposed-modules": [
         "Data.Graph"
     ],
