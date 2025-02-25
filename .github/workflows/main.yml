@@ -20,6 +20,6 @@ jobs:
           node-version-file: ".nvmrc"
           cache: "npm"
       - run: npm ci
-      - run: npm run elm-format:validate
-      - run: npm test
-      - run: npm run elm-review
+      - run: npm run test:elm-format-validate
+      - run: npm run test:elm
+      - run: npm run test:elm-review
