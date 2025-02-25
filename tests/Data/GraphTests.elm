@@ -135,4 +135,40 @@ suite =
                         [ Tree.tree 0 [ Tree.tree 1 [ Tree.tree 2 [] ] ]
                         , Tree.tree 3 []
                         ]
+        , Test.describe "dfs"
+            [ Test.test "dfs with empty graph and empty list" <|
+                \_ ->
+                    G.dfs (G.buildG ( 1, 0 ) []) []
+                        |> Expect.equal []
+            , Test.test "dfs with self-loop" <|
+                \_ ->
+                    G.dfs (G.buildG ( 1, 1 ) [ ( 1, 1 ), ( 1, 1 ), ( 1, 1 ) ]) [ 1 ]
+                        |> Expect.equal [ Tree.tree 1 [] ]
+            , Test.test "dfs with multiple edges" <|
+                \_ ->
+                    G.dfs (G.buildG ( 1, 3 ) [ ( 1, 2 ), ( 1, 3 ), ( 2, 3 ) ]) [ 1 ]
+                        |> Expect.equal [ Tree.tree 1 [ Tree.tree 3 [], Tree.tree 2 [] ] ]
+            , Test.test "dfs with starting node 2" <|
+                \_ ->
+                    G.dfs (G.buildG ( 1, 3 ) [ ( 1, 2 ), ( 1, 3 ), ( 2, 3 ) ]) [ 2 ]
+                        |> Expect.equal [ Tree.tree 2 [ Tree.tree 3 [] ] ]
+            , Test.test "dfs with starting node 3" <|
+                \_ ->
+                    G.dfs (G.buildG ( 1, 3 ) [ ( 1, 2 ), ( 1, 3 ), ( 2, 3 ) ]) [ 3 ]
+                        |> Expect.equal [ Tree.tree 3 [] ]
+            , Test.test "dfs with multiple starting nodes (descending order)" <|
+                \_ ->
+                    G.dfs (G.buildG ( 1, 3 ) [ ( 1, 2 ), ( 1, 3 ), ( 2, 3 ) ]) [ 3, 2, 1 ]
+                        |> Expect.equal [ Tree.tree 3 [], Tree.tree 2 [], Tree.tree 1 [] ]
+            , Test.test "dfs with multiple starting nodes (ascending order)" <|
+                \_ ->
+                    G.dfs (G.buildG ( 1, 3 ) [ ( 1, 2 ), ( 1, 3 ), ( 2, 3 ) ]) [ 1, 2, 3 ]
+                        |> Expect.equal [ Tree.tree 1 [ Tree.tree 3 [], Tree.tree 2 [] ] ]
+            , Test.test "dfs with large input (RangeError: Maximum call stack size exceeded)" <|
+                \_ ->
+                    List.repeat 5000 ()
+                        |> List.indexedMap (\i _ -> i)
+                        |> G.dfs (G.buildG ( 0, 0 ) [])
+                        |> always Expect.pass
+            ]
         ]

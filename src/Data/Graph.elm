@@ -485,40 +485,36 @@ This function deviates from King and Launchbury's implementation by
 bundling together the functions generate, prune, and chop for efficiency
 reasons.
 
+This diverges from the original Haskell implementation by using a stack instead
+of `SetM` monadic structure. This allows the function to be non-recursive and
+thus more efficient.
+
 -}
 dfs : Graph -> List Vertex -> List (Tree Vertex)
 dfs g vs0 =
     let
-        go : List Vertex -> SetM s (List (Tree Vertex))
-        go vrtcs =
+        go : List Vertex -> IntSet -> List ( Tree Vertex, List Vertex ) -> List (Tree Vertex) -> List (Tree Vertex)
+        go vrtcs visited stack acc =
             case vrtcs of
                 [] ->
-                    pure []
+                    case stack of
+                        [] ->
+                            List.reverse acc
+
+                        ( firstTree, firstVs ) :: ( secondTree, secondVs ) :: rest ->
+                            go firstVs visited (( Tree.appendChild firstTree secondTree, secondVs ) :: rest) acc
+
+                        ( firstTree, firstVs ) :: rest ->
+                            go firstVs visited rest (firstTree :: acc)
 
                 v :: vs ->
-                    contains v
-                        |> bind
-                            (\visited ->
-                                if visited then
-                                    go vs
+                    if Set.member v visited then
+                        go vs visited stack acc
 
-                                else
-                                    include v
-                                        |> bind
-                                            (\_ ->
-                                                go (Maybe.withDefault [] (Internal.find v g))
-                                                    |> bind
-                                                        (\subForest ->
-                                                            go vs
-                                                                |> bind
-                                                                    (\bs ->
-                                                                        pure (Tree.tree v subForest :: bs)
-                                                                    )
-                                                        )
-                                            )
-                            )
+                    else
+                        go (Maybe.withDefault [] (Internal.find v g)) (Set.insert v visited) (( Tree.singleton v, vs ) :: stack) acc
     in
-    run (Internal.bounds g) (go vs0)
+    go vs0 Set.empty [] []
 
 
 
@@ -529,44 +525,6 @@ dfs g vs0 =
 -}
 type alias IntSet =
     Set Int
-
-
-type SetM s a
-    = SetM (IntSet -> ( a, IntSet ))
-
-
-bind : (a -> SetM s b) -> SetM s a -> SetM s b
-bind f (SetM v) =
-    SetM
-        (\s ->
-            let
-                ( x, s_ ) =
-                    v s
-            in
-            case f x of
-                SetM v_ ->
-                    v_ s_
-        )
-
-
-pure : a -> SetM s a
-pure x =
-    SetM (\s -> ( x, s ))
-
-
-run : Bounds -> SetM s a -> a
-run _ (SetM act) =
-    Tuple.first (act Set.empty)
-
-
-contains : Vertex -> SetM s Bool
-contains v =
-    SetM (\m -> ( Set.member v m, m ))
-
-
-include : Vertex -> SetM s ()
-include v =
-    SetM (\m -> ( (), Set.insert v m ))
 
 
 
