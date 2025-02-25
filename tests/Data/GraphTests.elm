@@ -169,6 +169,6 @@ suite =
                     List.repeat 5000 ()
                         |> List.indexedMap (\i _ -> i)
                         |> G.dfs (G.buildG ( 0, 0 ) [])
-                        |> always Expect.pass
+                        |> (\_ -> Expect.pass)
             ]
         ]

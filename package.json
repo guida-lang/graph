@@ -1,14 +1,16 @@
 {
   "scripts": {
-    "test": "elm-test",
-    "elm-review": "elm-review",
-    "elm-format": "elm-format . --yes",
-    "elm-format:validate": "elm-format . --validate"
+    "test": "npm-run-all --parallel test:*",
+    "test:elm": "elm-test",
+    "test:elm-review": "elm-review",
+    "test:elm-format-validate": "elm-format . --validate",
+    "elm-format": "elm-format . --yes"
   },
   "devDependencies": {
     "elm": "^0.19.1-6",
     "elm-format": "^0.8.7",
     "elm-review": "^2.12.0",
-    "elm-test": "^0.19.1-revision12"
+    "elm-test": "^0.19.1-revision12",
+    "npm-run-all": "^4.1.5"
   }
 }
